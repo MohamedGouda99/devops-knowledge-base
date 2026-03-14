@@ -1,0 +1,14 @@
+project_id = "my-gcp-project-id"
+region     = "us-central1"
+
+openai_api_key = "sk-your-openai-api-key"
+supabase_url   = "https://your-project.supabase.co"
+supabase_key   = "your-supabase-anon-key"
+
+openai_model    = "gpt-4o"
+embedding_model = "text-embedding-3-small"
+
+backend_image  = "us-central1-docker.pkg.dev/my-gcp-project-id/devops-kb/backend:latest"
+frontend_image = "us-central1-docker.pkg.dev/my-gcp-project-id/devops-kb/frontend:latest"
+
+cors_origins = ["https://devops-kb-frontend-xxxxx.run.app"]
