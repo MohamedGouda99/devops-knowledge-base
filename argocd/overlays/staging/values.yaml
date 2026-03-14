@@ -1,0 +1,62 @@
+# Staging environment overrides
+namespace: devops-kb-staging
+
+backend:
+  replicaCount: 2
+
+  image:
+    tag: "staging"
+
+  config:
+    OPENAI_MODEL: "gpt-4o"
+    EMBEDDING_MODEL: "text-embedding-3-small"
+    CORS_ORIGINS: '["https://staging-kb.example.com"]'
+    CHUNK_SIZE: "1000"
+    CHUNK_OVERLAP: "200"
+
+  existingSecret: "backend-secrets"
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+frontend:
+  replicaCount: 2
+
+  image:
+    tag: "staging"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+ingress:
+  host: staging-kb.example.com
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  tls:
+    enabled: true
+    secretName: devops-kb-staging-tls
+
+networkPolicy:
+  enabled: true

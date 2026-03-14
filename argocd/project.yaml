@@ -1,0 +1,62 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: devops-knowledge-base
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: DevOps Knowledge Base RAG Application
+
+  # Source repositories allowed
+  sourceRepos:
+    - "https://github.com/your-org/devops-knowledge-base.git"
+
+  # Destination clusters and namespaces
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: devops-kb
+    - server: https://kubernetes.default.svc
+      namespace: devops-kb-dev
+    - server: https://kubernetes.default.svc
+      namespace: devops-kb-staging
+
+  # Allowed cluster-scoped resources
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  # Allowed namespace-scoped resources
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Secret
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+
+  # Roles
+  roles:
+    - name: admin
+      description: Full access to the project
+      policies:
+        - p, proj:devops-knowledge-base:admin, applications, *, devops-knowledge-base/*, allow
+      groups:
+        - devops-team
+
+    - name: readonly
+      description: Read-only access
+      policies:
+        - p, proj:devops-knowledge-base:readonly, applications, get, devops-knowledge-base/*, allow
+      groups:
+        - developers

@@ -1,0 +1,60 @@
+# Dev environment overrides
+namespace: devops-kb-dev
+
+backend:
+  replicaCount: 1
+
+  image:
+    tag: "develop"
+
+  config:
+    OPENAI_MODEL: "gpt-4o-mini"
+    EMBEDDING_MODEL: "text-embedding-3-small"
+    CORS_ORIGINS: '["https://dev-kb.example.com","http://localhost:3000"]'
+    CHUNK_SIZE: "1000"
+    CHUNK_OVERLAP: "200"
+
+  # In dev, use external-secrets-operator or sealed-secrets
+  existingSecret: "backend-secrets"
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: false
+
+frontend:
+  replicaCount: 1
+
+  image:
+    tag: "develop"
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+ingress:
+  host: dev-kb.example.com
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  tls:
+    enabled: true
+    secretName: devops-kb-dev-tls
+
+networkPolicy:
+  enabled: true

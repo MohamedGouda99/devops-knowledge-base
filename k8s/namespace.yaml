@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-kb
+  labels:
+    app.kubernetes.io/part-of: devops-knowledge-base
+    app.kubernetes.io/managed-by: kubectl

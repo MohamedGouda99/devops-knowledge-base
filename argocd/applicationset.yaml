@@ -1,0 +1,81 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: devops-knowledge-base
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: devops-knowledge-base
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: devops-kb-dev
+            targetRevision: develop
+            host: dev-kb.example.com
+            autoSync: true
+            selfHeal: true
+            prune: true
+          - env: staging
+            namespace: devops-kb-staging
+            targetRevision: staging
+            host: staging-kb.example.com
+            autoSync: true
+            selfHeal: true
+            prune: true
+          - env: prod
+            namespace: devops-kb
+            targetRevision: main
+            host: kb.example.com
+            autoSync: true
+            selfHeal: true
+            prune: true
+
+  template:
+    metadata:
+      name: "devops-kb-{{env}}"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: devops-knowledge-base
+        environment: "{{env}}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: devops-knowledge-base
+
+      source:
+        repoURL: https://github.com/your-org/devops-knowledge-base.git
+        targetRevision: "{{targetRevision}}"
+        path: helm/devops-knowledge-base
+        helm:
+          valueFiles:
+            - "../../argocd/overlays/{{env}}/values.yaml"
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+
+      syncPolicy:
+        automated:
+          prune: "{{prune}}"
+          selfHeal: "{{selfHeal}}"
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          - ServerSideApply=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+      ignoreDifferences:
+        - group: autoscaling
+          kind: HorizontalPodAutoscaler
+          jsonPointers:
+            - /spec/metrics
+
+      revisionHistoryLimit: 10

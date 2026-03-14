@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "devops-kb.fullname" . }}-test-connection"
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "devops-kb.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test-backend
+      image: busybox:1.36
+      command: ['sh', '-c']
+      args:
+        - |
+          echo "Testing backend health endpoint..."
+          wget -qO- --timeout=10 http://{{ include "devops-kb.fullname" . }}-backend:{{ .Values.backend.service.port }}/api/v1/health && echo "Backend OK" || exit 1
+          echo "Testing frontend health endpoint..."
+          wget -qO- --timeout=10 http://{{ include "devops-kb.fullname" . }}-frontend:{{ .Values.frontend.service.port }}/health && echo "Frontend OK" || exit 1

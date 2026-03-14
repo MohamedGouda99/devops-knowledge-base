@@ -1,0 +1,93 @@
+# Production environment overrides
+namespace: devops-kb
+
+backend:
+  replicaCount: 2
+
+  image:
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  config:
+    OPENAI_MODEL: "gpt-4o"
+    EMBEDDING_MODEL: "text-embedding-3-small"
+    CORS_ORIGINS: '["https://kb.example.com"]'
+    CHUNK_SIZE: "1000"
+    CHUNK_OVERLAP: "200"
+
+  existingSecret: "backend-secrets"
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+
+  # Production pod anti-affinity for HA
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - backend
+            topologyKey: topology.kubernetes.io/zone
+
+frontend:
+  replicaCount: 2
+
+  image:
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - frontend
+            topologyKey: topology.kubernetes.io/zone
+
+ingress:
+  host: kb.example.com
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    enabled: true
+    secretName: devops-kb-tls
+
+networkPolicy:
+  enabled: true
